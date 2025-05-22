@@ -1,8 +1,9 @@
 [build-system]
 requires = [
-    "build",
-    "setuptools>=42",
-    "wheel",
+    "build>=1.2.2",
+    "setuptools>=80",
+    "packaging>=24.2",
+    "wheel>=0.45.0",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -15,7 +16,6 @@ authors = [
     {name = "Jiau Zhang", email = "jiauzhang@163.com"},
 ]
 license = "GPL-2.0-only"
-license-files = ["LICENSE"]
 classifiers = [
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
 ]
