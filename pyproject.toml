@@ -14,11 +14,10 @@ readme = "README.md"
 authors = [
     {name = "Jiau Zhang", email = "jiauzhang@163.com"},
 ]
+license = "GPL-2.0-only"
+license-files = ["LICENSE"]
 classifiers = [
-    'Intended Audience :: Developers',
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
-    'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
-    'Programming Language :: Python :: 3.8',
 ]
 keywords = [
     'PyTorch',
@@ -27,8 +26,6 @@ keywords = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "numpy",
-    "torch",
     "nnm",
     'conippets>=0.1.8',
 ]
@@ -44,7 +41,7 @@ version = {attr = "torchstudio.__version__"}
 
 [project.optional-dependencies]
 dev = [
-    "pytest==8.3.4",
+    "pytest>=8.3.4",
 ]
 
 [tool.pytest.ini_options]

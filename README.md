@@ -1,4 +1,4 @@
-**TorchStudio**: An integrated development environment for PyTorch, designed to streamline deep learning workflows with enhanced visualization, debugging, and experiment management tools for researchers and developers.
+**TorchStudio**: Deep Learning Experiment.
 
 ----
 
