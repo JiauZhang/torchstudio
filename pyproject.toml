@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "build>=1.2.2",
-    "setuptools>=80",
+    "setuptools>=75",
     "packaging>=24.2",
     "wheel>=0.45.0",
 ]
@@ -15,7 +15,7 @@ readme = "README.md"
 authors = [
     {name = "Jiau Zhang", email = "jiauzhang@163.com"},
 ]
-license = "GPL-2.0-only"
+license = {file = "LICENSE"}
 classifiers = [
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
 ]
