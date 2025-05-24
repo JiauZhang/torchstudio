@@ -44,7 +44,7 @@ class State:
 def any_n_sum_to_k(n, k, lst):
     if n == 0:
         return k == 0
-    if k < 0 or not lst:
+    if k < 0 or not lst.size > 0:
         return False
     return any_n_sum_to_k(n-1, k - lst[0], lst[1:]) or any_n_sum_to_k(n, k, lst[1:])
 
@@ -76,19 +76,17 @@ class Game:
 
     def next_state(self, cur_state, player, move):
         state = self.step(cur_state, player, move)
+        hash = state.hash()
 
-        x_win = any_n_sum_to_k(3, 15, list(__magic_square__[state.X]))
-        o_win = any_n_sum_to_k(3, 15, list(__magic_square__[state.O]))
+        x_win = any_n_sum_to_k(3, 15, __magic_square__[state.X])
+        o_win = any_n_sum_to_k(3, 15, __magic_square__[state.O])
         total = len(state.X) + len(state.O)
 
         if x_win or total >= 9:
-            val = 0.0
+            self.value[hash] = 0.0
         elif o_win:
-            val = 1.0
-        else:
-            val = 0.5
+            self.value[hash] = 1.0
 
-        self.value[state.hash()] = val
         return state
 
     def update(self, old_state, new_state):
@@ -129,13 +127,15 @@ class Game:
                 break
 
             new_state = self.next_state(state, 'X', x_move)
-            self.update(state, new_state)
             if self.is_terminal_state(new_state):
+                self.update(state, new_state)
+                state = new_state
                 break
 
             exploratory = random.random() < self.epsilon
             o_move = self.random_move(new_state) if exploratory else self.greedy_move('O', new_state)
             if o_move is None:
+                state = new_state
                 break
 
             o_new_state = self.next_state(new_state, 'O', o_move)
@@ -143,9 +143,11 @@ class Game:
                 self.update(new_state, o_new_state)
 
             if self.is_terminal_state(o_new_state):
-                return self.value[o_new_state.hash()]
+                state = o_new_state
+                break
 
             state = o_new_state
+
         return self.value[state.hash()]
 
 def train(game):
@@ -156,7 +158,7 @@ def train(game):
     window = 5000
     cache_vals = [0] * window
     mean_val = 0
-    for i in range(1000000):
+    for i in range(100000):
         cur_val = game.run()
         last_val = cache_vals.pop(0)
         mean_val = mean_val + (cur_val - last_val) / window
@@ -173,23 +175,25 @@ def play(game):
         print(state)
         x_move = int(input('X move: '))
         state = game.step(state, 'X', x_move)
-        x_win = any_n_sum_to_k(3, 15, list(__magic_square__[state.X]))
+        x_win = any_n_sum_to_k(3, 15, __magic_square__[state.X])
         if x_win:
             print(f'{state}Win')
+            break
+        elif len(state.X) + len(state.O) == 9:
+            print(f'{state}Tie')
             break
 
         o_move = game.greedy_move('O', state)
         state = game.step(state, 'O', o_move)
-        o_win = any_n_sum_to_k(3, 15, list(__magic_square__[state.O]))
+        o_win = any_n_sum_to_k(3, 15, __magic_square__[state.O])
         if o_win:
             print(f'{state}Lose')
             break
-
-        if len(state.X) + len(state.O) == 9:
+        elif len(state.X) + len(state.O) == 9:
             print(f'{state}Tie')
             break
 
 if __name__ == '__main__':
-    game = Game(alpha=0.5, epsilon=0.5)
+    game = Game(alpha=0.5, epsilon=0.01)
     train(game)
     play(game)
