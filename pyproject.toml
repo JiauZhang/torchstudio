@@ -27,7 +27,8 @@ keywords = [
 requires-python = ">=3.8"
 dependencies = [
     "nnm",
-    'conippets>=0.1.8',
+    "conippets>=0.1.8",
+    "matplotlib",
 ]
 
 [project.urls]
