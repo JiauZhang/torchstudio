@@ -40,35 +40,50 @@ class Bandit:
     def train(self, steps, epsilon=0):
         self.q_action_value = np.zeros_like(self.mean_action_value)
         self.action_count = np.zeros_like(self.mean_action_value)
-        mean_reward = [np.array([0.0])]
+        mean_reward = np.zeros((steps + 1, 1))
+        mean_optimal_action = np.zeros(steps + 1)
+        optimal_action = np.argmax(self.mean_action_value)
 
-        for n in tqdm(range(1, steps+1)):
+        for n in range(1, steps+1):
             if random.random() > epsilon:
                 action = self.greedy_policy()
             else:
                 action = self.random_policy()
+
+            if action == optimal_action:
+                mean_optimal_action[n] = 1
+
             reward = self.reward(action)
-            mean_reward.append(mean_reward[-1] + (reward - mean_reward[-1]) / n)
+            mean_reward[n] = mean_reward[n - 1] + (reward - mean_reward[n - 1]) / n
             self.update_q(action, reward)
 
-        return np.array(mean_reward)
+        return np.array(mean_reward), mean_optimal_action
 
-    def figure_2_2(self, runs=500):
+    def figure_2_2(self, runs=500, steps=1000):
         mean_reward = []
-        optimal_action = []
+        mean_optimal_action = []
         epsilon = [0.0, 0.01, 0.1]
         color = ['g', 'r', 'b']
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         for eps, c in zip(epsilon, color):
-            for _ in range(runs):
-                mean_reward.append(self.train(1000, epsilon=eps))
+            for _ in tqdm(range(runs)):
+                reward, optimal_action = self.train(steps, epsilon=eps)
+                mean_reward.append(reward)
+                mean_optimal_action.append(optimal_action)
             mean_reward = np.array(mean_reward).mean(axis=0)
-            plt.plot(mean_reward, color=c, label=f'$\\epsilon = {eps:.02f}$')
+            mean_optimal_action = np.array(mean_optimal_action).mean(axis=0)
+            axes[0].plot(mean_reward, color=c, label=f'$\\epsilon = {eps:.02f}$')
+            axes[1].plot(mean_optimal_action, color=c, label=f'$\\epsilon = {eps:.02f}$')
             mean_reward = []
+            mean_optimal_action = []
 
-        plt.xlabel('steps')
-        plt.ylabel('average reward')
-        plt.legend()
-        plt.savefig('./mean_reward.png')
+        axes[0].set_xlabel('steps')
+        axes[0].set_ylabel('average reward')
+        axes[0].legend()
+        axes[1].set_xlabel('steps')
+        axes[1].set_ylabel('optimal action')
+        axes[1].legend()
+        plt.savefig('./figure_2_2.png')
         plt.close()
 
 if __name__ == '__main__':
