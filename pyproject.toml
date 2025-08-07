@@ -1,11 +1,6 @@
 [build-system]
-requires = [
-    "build>=1.2.2",
-    "setuptools>=75",
-    "packaging>=24.2",
-    "wheel>=0.45.0",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "torchstudio"
@@ -34,11 +29,11 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/jiauzhang/torchstudio"
 
-[tool.setuptools]
-package-dir = {"torchstudio" = "torchstudio"}
+[tool.hatch.version]
+path = "torchstudio/version.py"
 
-[tool.setuptools.dynamic]
-version = {attr = "torchstudio.__version__"}
+[tool.hatch.build.targets.wheel]
+packages = ["torchstudio"]
 
 [project.optional-dependencies]
 dev = [
