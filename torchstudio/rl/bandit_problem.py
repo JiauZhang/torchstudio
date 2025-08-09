@@ -161,9 +161,67 @@ class Bandit:
         plt.savefig('./figure_2_4.png')
         plt.close()
 
+    def softmax(self, values):
+        e_x = np.exp(values)
+        return e_x / np.sum(e_x)
+
+    def gradient_policy(self):
+        prob = self.softmax(self.preferences)
+        action = np.random.choice(len(self.preferences), p=prob)
+        return action
+
+    def update_preference(self, action, reward, alpha):
+        prob = self.softmax(self.preferences)
+        reward_diff = (reward - self.mean_reward)[0]
+        self.preferences -= alpha * reward_diff * prob
+        # for a = A_t
+        self.preferences[action] += alpha * reward_diff
+
+    def gradient_train(self, steps, offset=4, baseline=True, alpha=0.1):
+        self.preferences = np.zeros_like(self.mean_action_value)
+        self.mean_reward = 0.0
+        self.mean_action_value += offset
+        self.baseline = baseline
+
+        mean_optimal_action = np.zeros(steps + 1)
+        optimal_action = np.argmax(self.mean_action_value)
+
+        for n in range(1, steps+1):
+            action = self.gradient_policy()
+
+            if action == optimal_action:
+                mean_optimal_action[n] = 1
+
+            reward = self.reward(action)
+            if self.baseline:
+                self.mean_reward += (reward - self.mean_reward) / n
+            self.update_preference(action, reward, alpha)
+
+        self.mean_action_value -= offset
+
+        return mean_optimal_action
+
+    def figure_2_5(self, runs=500, steps=1000):
+        mean_optimal_action = []
+        _, axes = plt.subplots(1, 1, figsize=(12, 5))
+        for alpha in [0.1, 0.4]:
+            for baseline in [True, False]:
+                for _ in tqdm(range(runs)):
+                    optimal_action = self.gradient_train(steps, alpha=alpha, baseline=baseline)
+                    mean_optimal_action.append(optimal_action)
+                mean_optimal_action = np.array(mean_optimal_action).mean(axis=0)
+                axes.plot(mean_optimal_action, label=f'alpha={alpha}, baseline={baseline}')
+                mean_optimal_action = []
+        axes.set_xlabel('steps')
+        axes.set_ylabel('optimal action')
+        axes.legend()
+        plt.savefig('./figure_2_5.png')
+        plt.close()
+
 if __name__ == '__main__':
     bandit = Bandit()
     bandit.figure_2_1()
     bandit.figure_2_2()
     bandit.figure_2_3()
     bandit.figure_2_4()
+    bandit.figure_2_5()
