@@ -11,8 +11,11 @@ def random_text():
 dataset = []
 for i in range(100):
     item = {
-        'prompt': [{'role': 'user', 'content': random_text()}],
-        'complete': [{'role': 'assistant', 'content': random_text()}],
+        'prompt': [
+            {'role': 'system', 'content': random_text()},
+            {'role': 'user', 'content': random_text()},
+        ],
+        'answer': random_text(),
     }
     dataset.append(item)
 
