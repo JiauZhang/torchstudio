@@ -8,7 +8,7 @@ from datasets import load_dataset
 config = GPT2Config()
 model = GPT2LMHeadModel(config)
 tokenizer = GPT2Tokenizer('vocab.json', 'merges.txt')
-dataset = load_dataset('json', data_files='grpodataset.jsonl', split='train')
+dataset = load_dataset('json', data_files='grpo-llm-dataset.jsonl', split='train')
 
 # convert conversation structure to pure text string
 def apply_chat_template(prompt, **kwargs):
