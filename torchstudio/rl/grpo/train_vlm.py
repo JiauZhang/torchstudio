@@ -12,21 +12,17 @@ from datasets import load_dataset, Features, Image
 
 config = Idefics3Config.from_dict(json.read('config.json'))
 config.scale_factor = 1
+config.text_config.intermediate_size = 192
+config.vision_config.intermediate_size = 192
 
 model = Idefics3ForConditionalGeneration(config)
 image_processor = Idefics3ImageProcessor()
 tokenizer = GPT2Tokenizer('vocab.json', 'merges.txt')
 processor = Idefics3Processor(image_processor, tokenizer)
 
-def make_random_image(example):
-    size = config.vision_config.image_size
-    random_data = np.random.randint(0, 256, size=(size, size, 3), dtype=np.uint8)
-    pil_image = fromarray(random_data)
-    example['image'] = pil_image
-    return example
-dataset = load_dataset('json', data_files='grpo-vlm-dataset.jsonl', split='train')
-dataset = dataset.map(make_random_image)
-dataset = dataset.cast_column('image', Image(decode=True))
+dataset = load_dataset(
+    'json', data_files='grpo-vlm-dataset.jsonl', split='train',
+).cast_column('image', Image(decode=True))
 
 # convert conversation structure
 # {

@@ -15,7 +15,7 @@ for i in range(100):
             {'role': 'system', 'content': random_text()},
             {'role': 'user', 'content': random_text()},
         ],
-        'image': random_text(),
+        'image': 'image.png',
         'answer': random_text(),
     }
     dataset.append(item)
