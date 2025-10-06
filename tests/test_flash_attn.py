@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from torchstudio.flash_attn import (
+from torchstudio.attention.flash_attn import (
     softmax,
     full_attention,
     flash_attention,

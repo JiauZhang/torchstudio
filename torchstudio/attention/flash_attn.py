@@ -9,8 +9,7 @@ def tiled_attention(q, k, v, output, m_base, norm_base):
     # q shape: [B_r, d], k shape: [B_c, d]
     s = q @ k.T
     m = np.max(s, axis=1, keepdims=True)
-    m_m_base = np.concat((m, m_base), axis=1)
-    m_new = np.max(m_m_base, axis=1, keepdims=True)
+    m_new = np.maximum(m, m_base)
     p = np.exp(s - m)
     norm = np.sum(p, axis=1, keepdims=True)
     exp_m_m_new = np.exp(m - m_new)
