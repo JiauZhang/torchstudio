@@ -5,6 +5,24 @@ def softmax(x, axis):
     exp_x = np.exp(x_shifted)
     return exp_x / np.sum(exp_x, axis=axis, keepdims=True)
 
+def tiled_softmax(x, y, axis):
+    x_max = np.max(x, axis=axis, keepdims=True)
+    x_shifted = x - x_max
+    exp_x = np.exp(x_shifted)
+    x_sum = np.sum(exp_x, axis=axis, keepdims=True)
+
+    y_max = np.max(y, axis=axis, keepdims=True)
+    y_shifted = y - y_max
+    exp_y = np.exp(y_shifted)
+    y_sum = np.sum(exp_y, axis=axis, keepdims=True)
+
+    xy_max = np.maximum(x_max, y_max)
+    exp_x_xy_max = np.exp(x_max - xy_max)
+    exp_y_xy_max = np.exp(y_max - xy_max)
+    xy_sum = exp_x_xy_max * x_sum + exp_y_xy_max * y_sum
+    o = np.concat((exp_x_xy_max * exp_x, exp_y_xy_max * exp_y), axis=axis) / xy_sum
+    return o
+
 def tiled_attention(q, k, v, output, m_base, norm_base):
     # q shape: [B_r, d], k shape: [B_c, d]
     s = q @ k.T

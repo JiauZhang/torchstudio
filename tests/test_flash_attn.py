@@ -1,10 +1,22 @@
 import pytest
 import numpy as np
 from torchstudio.attention.flash_attn import (
-    softmax,
+    softmax, tiled_softmax,
     full_attention,
     flash_attention,
 )
+
+@pytest.mark.parametrize('shape', [(1, 6), (32, 33), (64, 87), (68, 53)])
+def test_tiled_softmax(shape):
+    x = np.random.randn(*shape)
+    sep = shape[1] // 2 + 2
+    y = x[:, :sep]
+    z = x[:, sep:]
+    o = tiled_softmax(y, z, 1)
+    gt = softmax(x, 1)
+    assert o.shape == gt.shape
+    assert (np.abs(np.sum(o, axis=1) - 1) < 1e-6).all()
+    assert (np.abs(gt - o) < 1e-6).all()
 
 @pytest.mark.parametrize('shape', [(32, 16), (64, 32), (127, 53)])
 def test_full_attention(shape):
