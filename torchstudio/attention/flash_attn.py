@@ -73,3 +73,48 @@ def flash_attention(q, k, v, M):
             O_i[...], m_i[...], norm_i[...] = tiled_attention(Q_i, K_j, V_j, O_i, m_i, norm_i)
 
     return output
+
+def tiled_attention_v2(q, k, v, output, m_base, norm_base):
+    # q shape: [B_r, d], k shape: [B_c, d]
+    s = q @ k.T
+    m = np.max(s, axis=1, keepdims=True)
+    m_new = np.maximum(m, m_base)
+    # use the newest m_max directly
+    p = np.exp(s - m_new)
+    norm = np.sum(p, axis=1, keepdims=True)
+    exp_m_base_m_new = np.exp(m_base - m_new)
+    norm_new = exp_m_base_m_new * norm_base + norm
+    # do not norm here
+    output =  exp_m_base_m_new * output + p @ v
+    return output, m_new, norm_new
+
+def flash_attention_v2(q, k, v, M):
+    N, d = q.shape
+    B_c = int(np.ceil(M / 4 / d))
+    B_r = int(min(np.ceil(M / 4 / d).item(), d))
+    T_r = int(np.ceil(N / B_r))
+    T_c = int(np.ceil(N / B_c))
+
+    output = np.zeros_like(q)
+    norm_base = np.zeros((q.shape[0], 1))
+    m_base = norm_base - np.inf
+
+    # we can parallelize along the sequence length dimension T_r
+    for i in range(T_r):
+        # [B_r, d]
+        Q_i = __fetch_block(q, i * B_r, 0, B_r, d)
+        O_i = __fetch_block(output, i * B_r, 0, B_r, d)
+        # [B_r, 1]
+        norm_i = __fetch_block(norm_base, i * B_r, 0, B_r, 1)
+        m_i = __fetch_block(m_base, i * B_r, 0, B_r, 1)
+        for j in range(T_c):
+            # [B_c, d]
+            K_j = __fetch_block(k, j * B_c, 0, B_c, d)
+            V_j = __fetch_block(v, j * B_c, 0, B_c, d)
+            O_i, m_i, norm_i = tiled_attention_v2(Q_i, K_j, V_j, O_i, m_i, norm_i)
+        # normalize output
+        __fetch_block(output, i * B_r, 0, B_r, d)[...] = O_i / norm_i
+        __fetch_block(norm_base, i * B_r, 0, B_r, 1)[...] = norm_i
+        __fetch_block(m_base, i * B_r, 0, B_r, 1)[...] = m_i
+
+    return output

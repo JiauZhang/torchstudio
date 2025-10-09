@@ -4,6 +4,7 @@ from torchstudio.attention.flash_attn import (
     softmax, tiled_softmax,
     full_attention,
     flash_attention,
+    flash_attention_v2,
 )
 
 @pytest.mark.parametrize('shape', [(1, 6), (32, 33), (64, 87), (68, 53)])
@@ -42,3 +43,7 @@ def test_flash_attention(shape, M):
     gt = softmax(q @ k.T, axis=1) @ v
     assert score.shape == gt.shape
     assert (np.abs(gt - score) < 1e-6).all()
+
+    score_v2 = flash_attention_v2(q, k, v, M)
+    assert score_v2.shape == gt.shape
+    assert (np.abs(gt - score_v2) < 1e-6).all()
