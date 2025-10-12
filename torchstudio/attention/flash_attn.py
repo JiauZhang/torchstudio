@@ -88,6 +88,11 @@ def tiled_attention_v2(q, k, v, output, m_base, norm_base):
     output =  exp_m_base_m_new * output + p @ v
     return output, m_new, norm_new
 
+def __block_roi(data, top, left, height, width):
+    bottom = min(top + height, data.shape[0])
+    right = min(left + width, data.shape[1])
+    return bottom, right
+
 def flash_attention_v2(q, k, v, M):
     N, d = q.shape
     B_c = int(np.ceil(M / 4 / d))
@@ -102,19 +107,21 @@ def flash_attention_v2(q, k, v, M):
     # we can parallelize along the sequence length dimension T_r
     for i in range(T_r):
         # [B_r, d]
+        top, left = i * B_r, 0
+        bottom, right = __block_roi(q, i * B_r, 0, B_r, d)
         Q_i = __fetch_block(q, i * B_r, 0, B_r, d)
-        O_i = __fetch_block(output, i * B_r, 0, B_r, d)
+        O_i = np.zeros((bottom - top, d))
         # [B_r, 1]
-        norm_i = __fetch_block(norm_base, i * B_r, 0, B_r, 1)
-        m_i = __fetch_block(m_base, i * B_r, 0, B_r, 1)
+        norm_i = np.zeros((bottom - top, 1))
+        m_i = norm_i - np.inf
         for j in range(T_c):
             # [B_c, d]
             K_j = __fetch_block(k, j * B_c, 0, B_c, d)
             V_j = __fetch_block(v, j * B_c, 0, B_c, d)
             O_i, m_i, norm_i = tiled_attention_v2(Q_i, K_j, V_j, O_i, m_i, norm_i)
         # normalize output
-        __fetch_block(output, i * B_r, 0, B_r, d)[...] = O_i / norm_i
-        __fetch_block(norm_base, i * B_r, 0, B_r, 1)[...] = norm_i
-        __fetch_block(m_base, i * B_r, 0, B_r, 1)[...] = m_i
+        output[top:bottom] = O_i / norm_i
+        norm_base[top:bottom] = norm_i
+        m_base[top:bottom] = m_i
 
     return output
