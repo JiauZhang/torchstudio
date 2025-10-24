@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "pillow",
     "trl>=0.23.0",
+    "pymupdf>=1.26.4",
 ]
 
 [project.urls]

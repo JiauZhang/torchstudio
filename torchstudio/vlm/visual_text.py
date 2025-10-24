@@ -1,6 +1,24 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+from transformers import Qwen3VLForConditionalGeneration, AutoProcessor, TextStreamer
+import os, pymupdf
+
+def doc_images(scale=1, num_pages=1):
+    pdf_path = 'paper.pdf'
+    if not os.path.exists(pdf_path):
+        os.system(f'curl https://arxiv.org/pdf/2510.18234 -o {pdf_path}')
+
+    mat = pymupdf.Matrix(scale, scale)
+    doc = pymupdf.open('paper.pdf')
+    pil_images = []
+    doc_texts = []
+    for idx, page in enumerate(doc.pages()):
+        if idx > num_pages:
+            break
+        doc_texts.append(page.get_text())
+        pil_image = page.get_pixmap(matrix=mat).pil_image()
+        pil_images.append(pil_image)
+    return doc_texts, pil_images
 
 def draw_context(processor, messages, margin=10, font_size=12):
     image = np.empty((512, 512, 3), dtype=np.uint8)
@@ -15,20 +33,21 @@ def draw_context(processor, messages, margin=10, font_size=12):
 model_id = "Qwen/Qwen3-VL-4B-Thinking"
 model = Qwen3VLForConditionalGeneration.from_pretrained(model_id, dtype="auto", device_map="auto")
 processor = AutoProcessor.from_pretrained(model_id)
+streamer = TextStreamer(processor.tokenizer, skip_prompt=True)
 
-messages = [
+context = [
     {
         'role': 'user',
         'content': [
-            {'type': 'text', 'text': 'Hi.'}
+            {'type': 'text', 'text': 'What is the core point of this paper?'}
         ]
     }
 ]
-context = draw_context(processor, messages)
+context = draw_context(processor, context)
 
 system_instruction = '''
-You are an helpful AI assistant, and all your chat histories with users are recorded in images.
-You need to respond to users based on the information in the images.
+You are an helpful AI assistant, and all the chat histories between you and the user are recorded in images.
+You must respond to the user based the history information recorded in the images.
 '''
 messages = [
     {
@@ -42,14 +61,16 @@ messages = [
     },
     {
         "role": "user",
-        "content": [
-            {
-                "type": "image",
-                "image": context,
-            },
-        ],
+        "content": [],
     }
 ]
+
+doc_texts, pil_images = doc_images(num_pages=2)
+for pil_image in pil_images + [context]:
+    messages[-1]['content'].append({
+        'type': 'image',
+        'image': pil_image,
+    })
 
 inputs = processor.apply_chat_template(
     messages,
@@ -60,7 +81,7 @@ inputs = processor.apply_chat_template(
 )
 inputs = inputs.to(model.device)
 
-generated_ids = model.generate(**inputs, max_new_tokens=1024)
+generated_ids = model.generate(**inputs, streamer=streamer, max_new_tokens=4096)
 generated_ids_trimmed = [
     out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
 ]
