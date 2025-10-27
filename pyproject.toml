@@ -27,6 +27,7 @@ dependencies = [
     "pillow",
     "trl>=0.23.0",
     "pymupdf>=1.26.4",
+    "opencv-python>=4.11.0"
 ]
 
 [project.urls]
