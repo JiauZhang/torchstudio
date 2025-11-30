@@ -24,7 +24,7 @@ dependencies = [
     "nnm",
     "conippets>=0.1.8",
     "matplotlib",
-    "pillow",
+    "pillow>=11.3.0",
     "trl>=0.23.0",
     "pymupdf>=1.26.4",
     "opencv-python>=4.11.0"
